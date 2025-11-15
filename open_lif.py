@@ -5,8 +5,6 @@ stand_Lif_Imgs: take a specific naming convention in a representative image and 
 sure all images in the image name and images dictionary only have names that meet that convention
 
 File contains minor functions--
-img_Rescale: take grayscale 16bit numpy array of an image and threshold it 
-based on min and max pixel value
 substr_Idxs: gets the start index of all instances of a substring in a string
 get_Trns_Nms: takes a list of images and a delimiter string to generate the unique
 file naming convention for stand_Lif_Imgs
@@ -16,21 +14,6 @@ import pickle #To save the dicts
 from readlif.reader import LifFile #importing readlif lif storing object
 import numpy as np #to manipulate images
 #Define sub-functions
-
-
-def img_Rescale(arr, new_min, new_max): #Rescale Images from numpy array
-    """
-    arr is a numpy array 
-    new_min and new_max are the scaling values
-    """
-    arr_min = arr.min()
-    arr_max = arr.max()
-    if arr_min == arr_max: #make sure no divide by 0
-        raise ValueError("The image min and max are the same")
-    flt_arr = (arr - arr_min) * (new_max - new_min)/(arr_max - arr_min) + new_min 
-    #rescale based on the input threshold
-    return np.round(flt_arr).astype(np.uint16)
-    #round and output as uint16 as rescaled arr is currently floats
 
 def substr_Idxs(main_str, sub_str): #find all indexes of a substring in a main string
     """
@@ -59,10 +42,10 @@ def get_Trns_Nms(nms_Dct, sub_str, template_Lif): #Get Unique Transcript Names
     return list(set(trns_Nms))
 
 #Define Main Functions
-def get_Lif_Imgs(lifFolderPath, img_w, img_l, LUT_Min, LUT_Max): #get img and imgnms dicts
+def get_Lif_Imgs(lifFolderPath, img_w, img_l, img_thr): #get img and imgnms dicts
     """
     takes in a folder path with lif files, the dimensions of images in the file, 
-    and the min and max values for rescaling all the images
+    and the threshold for the lowest pixel value in the image
     NOTE this only works if the path presented is a directory with only lif images in it
     """
     if os.path.exists(lifFolderPath) & os.path.isdir(lifFolderPath):
@@ -77,7 +60,7 @@ def get_Lif_Imgs(lifFolderPath, img_w, img_l, LUT_Min, LUT_Max): #get img and im
                 #Get image array and alter the LUT
                 img = lif_File.get_image(j)
                 img_Arr = np.array(img.get_frame(c=0))
-                img_Arr = img_Rescale(img_Arr, LUT_Min, LUT_Max)
+                img_Arr[img_Arr <= img_thr] = 0 #set all values under the threshold to 0
                 tmp_Img_Arr[j] = img_Arr
                 #Format Image Name
                 tmp_Nm = img.name
@@ -110,18 +93,13 @@ def stand_Lif_Imgs(raw_nms_dct, raw_imgs_dct, delim_str, template_Lif):
     img_dict = {}
     for i in range(len(lif_File_Nms)):
         img_Nms = raw_nms_dct[lif_File_Nms[i]]
-        if i == 0:
-            print(img_Nms)
         for j in range(len(trns_Nms)): #find all the indexes in the names that have a template transcript name
             tmp_idxs = np.zeros(len(img_Nms), dtype=bool)
             for k in range(len(img_Nms)):
                 tmp_idxs[k] = ((trns_Nms[j] + delim_str) in img_Nms[k]) #needs the extra underscore to be restrictive
             no_del_idxs = np.flatnonzero(tmp_idxs) #get non-zero elements
-            if i == 0:
-                print(no_del_idxs)
             img_nm_dict[lif_File_Nms[i]+"#"+trns_Nms[j]] = [raw_nms_dct[lif_File_Nms[i]][l] for l in no_del_idxs]
             img_dict[lif_File_Nms[i]+"#"+trns_Nms[j]] = raw_imgs_dct[lif_File_Nms[i]][no_del_idxs,:,:]
-    #print(img_nm_dict)
     print("Image Dicts Standardized")
     return img_nm_dict, img_dict
 
@@ -133,10 +111,9 @@ def load_save_dicts(pkl_fnm):
     lifFolderPath = r"C:\Users\Simon\Documents\Cardiomyocytes Files\lif files"
     img_w = 1280
     img_l = 1080
-    LUT_Min = 1000
-    LUT_Max = 65355
+    img_thr = 1000
     #Get, format, and save dicts
-    raw_img_Nms, raw_imgs = get_Lif_Imgs(lifFolderPath, img_w, img_l, LUT_Min, LUT_Max) #Get image dicts
+    raw_img_Nms, raw_imgs = get_Lif_Imgs(lifFolderPath, img_w, img_l, img_thr) #Get image dicts
     img_Nms, imgs = stand_Lif_Imgs(raw_img_Nms, raw_imgs,"_",0) #Standardize image dicts
     with open(pkl_fnm, "wb") as f: #pickle dicts
         pickle.dump(img_Nms, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -167,6 +144,8 @@ def use_open_lif():
                     imgs = pickle.load(f)
                 print("Image names dict and images dict are loaded in")
                 incr_inp = False
+            else:
+                print("Invalid input, please try again.")
     else: #if the dicts dont exist generate and save them
         img_Nms, imgs = load_save_dicts(pkl_fnm)
     return img_Nms, imgs
