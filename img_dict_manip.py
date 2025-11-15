@@ -20,18 +20,49 @@ def get_key_parts(in_dict, delim_str):
         sub_keys[i] = k[idx+len(delim_str):]
     return list(sorted(set(sup_keys))), list(sorted(set(sub_keys)))
 
+def req_two_idx(idx_1_up,idx_2_up):
+    """Takes in two index upper bounds (must be less than) and prompts indexes"""
+    bad = True
+    while bad: #make sure input 1 is valid
+        idx_1= input("\nPrompt 1. Please Input Integer " +
+                            "Representing First Index: ")
+        try: #will break if no integer
+            idx_1= int(idx_1) #input only returns strings
+        except ValueError:
+            print("\nInput is not an Integer!")
+            continue
+        if ((type(idx_1) is int) & (idx_1> -1) & (idx_1< idx_1_up)):
+            bad = False #Check for valid input
+        else:
+            print("\nInput is an invalid integer, please try again")
+    bad = True
+    while bad: #make sure input 2 is valid
+        idx_2 = input("\nPrompt 2. Please Input Integer " +
+                        "Representing Second Index: ")
+        try:
+            idx_2 = int(idx_2)
+        except ValueError:
+            print("\nInput is not an Integer!")
+            continue
+        if ((type(idx_2) is int) & (idx_2 > -1) & (idx_2 < idx_2_up)):
+            bad = False
+        else:
+            print("\nInput is an invalid integer, please try again")
+    return idx_1, idx_2
+
 def show_imgs(nm_dict, img_dict, delim_str):
     """ With a dict of images and of their names where the keys follow the 
     convention discussed in get_key_parts, get a subset of those images by
     prompting the user and then further allow the user to only open images
     with a certain average brightness compared to other images in the same
-    sup_str + delim_str + sub_str key
+    sup_str + delim_str + sub_str key. The user can also optionally get 
+    information on all the image brightnesses in the selection and open 
+    based on indexes and not the threshold.
     """
     sup_kys, sub_kys = get_key_parts(nm_dict, delim_str)
-    table = PrettyTable()
-    print("When prompted, please put input corresponding\n" +
-           "to the prompt number and desired img key")
-    table.field_names = ["Prompt Input", "First Prompt","Second Prompt"]
+    table_1 = PrettyTable()
+    
+    table_1.field_names = ["Prompt Input", "First Prompt","Second Prompt"]
     for i in range(max(len(sup_kys), len(sub_kys))):
         if ((i < len(sup_kys)) & (i < len(sub_kys))):
             tbl_row = [i, sup_kys[i], sub_kys[i]]
@@ -39,73 +70,108 @@ def show_imgs(nm_dict, img_dict, delim_str):
             tbl_row = [i,sup_kys[i],"N/A"]
         elif ((i >= len(sup_kys)) & (i < len(sub_kys))):
             tbl_row = [i,"N/A",sub_kys[i]] 
-        table.add_row(tbl_row)
-    print(table)
+        table_1.add_row(tbl_row)
     more_imgs = True #set while loop
     while more_imgs: #allow for the opening of multiple sets of images
-        bad = True
-        while bad: #make sure input 1 is valid
-            sup_kys_idx = input("Prompt 1. Please Input Integer " +
-                                "Representing First Key Component: ")
-            try: #will break if no integer
-                sup_kys_idx = int(sup_kys_idx) #input only returns strings
-            except ValueError:
-                print("Input is not an Integer!")
-                continue
-            if ((type(sup_kys_idx) is int) & (sup_kys_idx > -1) & (sup_kys_idx < len(sup_kys))):
-                bad = False #Check for valid input
-            else:
-                print("Input is an invalid integer, please try again")
-        bad = True
-        while bad: #make sure input 2 is valid
-            sub_kys_idx = input("Prompt 2. Please Input Integer " +
-                            "Representing Second Key Component: ")
-            try:
-                sub_kys_idx = int(sub_kys_idx)
-            except ValueError:
-                print("Input is not an Integer!")
-            if ((type(sub_kys_idx) is int) & (sub_kys_idx > -1) & (sub_kys_idx < len(sub_kys))):
-                bad = False
-            else:
-                print("Input is an invalid integer, please try again")
-                continue
+        print("\nHere is a table with indexes associated with image files and transcript\n" +
+              "categories of the images openable through this function.")
+        print(table_1)
+        print("\nPlease put input corresponding to\n" +
+           "the prompt number and desired img key")
+        sup_kys_idx, sub_kys_idx = req_two_idx(len(sup_kys),len(sub_kys))
         req_key = sup_kys[sup_kys_idx] + delim_str + sub_kys[sub_kys_idx]
         img_mns = img_dict[req_key].mean(axis=(1,2)) #gets mean for brightness
+        print("\nHere is a table with a summary of information pertaining\n" +
+               "to the brightness of the images in your selection.")
         table = PrettyTable()
-        print("You will be asked to input a value. Images with average brightness\n" +
-               "equal to or above that value in the selection will be opened.\n" +
-              "Below is a summary table of brightness values in the selection: ")
-        table.field_names = ["Mean", "Maximum","Minimum"]
-        table.add_row([np.mean(img_mns),np.max(img_mns),np.min(img_mns)])
+        table.field_names = ["Minimum","Quarter 1","Median","Quarter 3","Maximum"]
+        table.add_row([np.min(img_mns),np.percentile(img_mns,25),np.percentile(img_mns,50)\
+                       ,np.percentile(img_mns,75),np.max(img_mns)])
         print(table)
         bad = True
-        while bad: #make sure input is valid
-            img_thr = input("Please input image open threshold (float or int only): ")
-            try:
-                img_thr = float(img_thr)
-            except ValueError:
-                print("Input is not a float!")
-                continue
-            if ((type(img_thr) is float) & (img_thr <= np.max(img_mns))):
-                thresh_vec = img_mns >= img_thr #get logical mask
-                proc_q = input(f"This will generate {np.sum(thresh_vec)} imgs. Proceed? (Y/N): ")
-                if proc_q .capitalize() == "Y": #Open images is yes
-                    bad = False
-                else:
-                    print("Will not proceed, returning to threshold prompt.")
+        while bad: #more information loop
+            mr_inf = input("\nWould you like more information? (Y/N): ")
+            if mr_inf.capitalize() == "Y": #Give Comprehensive table
+                print("\nHere is a table with the index associated with,\n" +
+                      "name of, and brightness of all slected images.")
+                table = PrettyTable()
+                table.add_column("Index",np.arange(0,len(img_mns)))
+                table.add_column("Image Name",nm_dict[req_key])
+                table.add_column("Mean Brightness",img_mns)
+                print(table)
+                bad_in = True
+                while bad_in: #with comprehensive table ask if img open is based on indices
+                    idx_t = input("\nOpen images across range between two idxs? (Y/N): ")
+                    if idx_t.capitalize() == "Y": #Open images bases on indices
+                        idx_t = True
+                        bad_in = False
+                    elif idx_t.capitalize() == "N":
+                        idx_t = False
+                        bad_in = False
+                    else:
+                        print("\nInvalid input, please try again.")
+                bad = False
+            elif mr_inf.capitalize() == "N":
+                idx_t = False
+                bad = False
             else:
-                print("Threshold will not open an image, please try again")
-        for i,img in enumerate(img_dict[req_key][thresh_vec]):
-            pil_img = Image.fromarray(img) #convert to pillow object
-            fig = plt.figure()
-            fig.canvas.manager.set_window_title(nm_dict[req_key][i])  # real window title
-            plt.imshow(img) 
-            plt.axis("off")
-            plt.title(nm_dict[req_key][i])
-        plt.show()
+                print("\nInvalid input, please try again.")
+        bad = True
+        if idx_t: #opens based on indexes
+            max_idx = len(nm_dict[req_key])
+            bad = True
+            while bad: #makes sure indexes are correct
+                print("\nYou will be asked to input first and second indexes\n" +
+                    "These will be the starting and ending integer indexes\n" +
+                    "of images in the selsection you would like to open.\n" +
+                    "The first index can thus equal but NOT exceed the second.\n" +
+                    f"They also cannot be less than 0 or greater than {max_idx-1}.")
+                idx_s, idx_e = req_two_idx(max_idx,max_idx)   
+                if idx_s <= idx_e:
+                    proc_q = input(f"\nThis will generate {idx_e-idx_s+1} imgs. Proceed? (Y/N): ")
+                    if proc_q .capitalize() == "Y": #Open images is yes
+                        print("\nNOTE: You will have to close all image windown before continuing")
+                        bad = False
+                    else:
+                        print("\nWill not proceed, returning to indexes prompt.")
+            for i,img in enumerate(img_dict[req_key][np.arange(idx_s,idx_e+1)]):
+                pil_img = Image.fromarray(img) #convert to pillow object
+                fig = plt.figure()
+                fig.canvas.manager.set_window_title(nm_dict[req_key][i])  # real window title
+                plt.imshow(img) 
+                plt.axis("off")
+                plt.title(nm_dict[req_key][i])
+            plt.show()
+        else: #opens based on brightness threshold
+            while bad: #make sure input is valid
+                img_thr = input("\nPlease input brightness threshold. Images with mean\n" +
+                                "brightness above it will open (float or int only): ")
+                try:
+                    img_thr = float(img_thr)
+                except ValueError:
+                    print("\nInput is not a float!")
+                    continue
+                if ((type(img_thr) is float) & (img_thr <= np.max(img_mns))):
+                    thresh_vec = img_mns >= img_thr #get logical mask
+                    proc_q = input(f"\nThis will generate {np.sum(thresh_vec)} imgs. Proceed? (Y/N): ")
+                    if proc_q .capitalize() == "Y": #Open images is yes
+                        print("\nNOTE: You will have to close all image windown before continuing")
+                        bad = False
+                    else:
+                        print("\nWill not proceed, returning to threshold prompt.")
+                else:
+                    print("\nThreshold will not open an image, please try again")
+            for i,img in enumerate(img_dict[req_key][thresh_vec]):
+                pil_img = Image.fromarray(img) #convert to pillow object
+                fig = plt.figure()
+                fig.canvas.manager.set_window_title(nm_dict[req_key][i])  # real window title
+                plt.imshow(img) 
+                plt.axis("off")
+                plt.title(nm_dict[req_key][i])
+            plt.show()
         bad = True
         while bad:
-            go_on = input("Continue to open new images? (Y/N): ")
+            go_on = input("\nContinue to open new images? (Y/N): ")
             if go_on.capitalize() == "Y": #Open more images if yes
                 more_imgs = True
                 bad = False
@@ -113,7 +179,7 @@ def show_imgs(nm_dict, img_dict, delim_str):
                 more_imgs = False
                 bad = False
             else:
-                print("Invalid input, please try again.")
+                print("\nInvalid input, please try again.")
         
 
 
