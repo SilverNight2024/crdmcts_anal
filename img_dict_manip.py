@@ -61,7 +61,6 @@ def show_imgs(nm_dict, img_dict, delim_str):
     """
     sup_kys, sub_kys = get_key_parts(nm_dict, delim_str)
     table_1 = PrettyTable()
-    
     table_1.field_names = ["Prompt Input", "First Prompt","Second Prompt"]
     for i in range(max(len(sup_kys), len(sub_kys))):
         if ((i < len(sup_kys)) & (i < len(sub_kys))):
@@ -135,12 +134,11 @@ def show_imgs(nm_dict, img_dict, delim_str):
                     else:
                         print("\nWill not proceed, returning to indexes prompt.")
             for i,img in enumerate(img_dict[req_key][np.arange(idx_s,idx_e+1)]):
-                pil_img = Image.fromarray(img) #convert to pillow object
                 fig = plt.figure()
-                fig.canvas.manager.set_window_title(nm_dict[req_key][i])  # real window title
+                fig.canvas.manager.set_window_title(nm_dict[req_key][i+idx_s])  # real window title
                 plt.imshow(img) 
                 plt.axis("off")
-                plt.title(nm_dict[req_key][i])
+                plt.title(nm_dict[req_key][i+idx_s])
             plt.show()
         else: #opens based on brightness threshold
             while bad: #make sure input is valid
@@ -161,13 +159,13 @@ def show_imgs(nm_dict, img_dict, delim_str):
                         print("\nWill not proceed, returning to threshold prompt.")
                 else:
                     print("\nThreshold will not open an image, please try again")
+            thresh_idxs = np.flatnonzero(thresh_vec)
             for i,img in enumerate(img_dict[req_key][thresh_vec]):
-                pil_img = Image.fromarray(img) #convert to pillow object
                 fig = plt.figure()
-                fig.canvas.manager.set_window_title(nm_dict[req_key][i])  # real window title
+                fig.canvas.manager.set_window_title(nm_dict[req_key][thresh_idxs[i]])  # real window title
                 plt.imshow(img) 
                 plt.axis("off")
-                plt.title(nm_dict[req_key][i])
+                plt.title(nm_dict[req_key][thresh_idxs[i]])
             plt.show()
         bad = True
         while bad:
