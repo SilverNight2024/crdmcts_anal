@@ -41,47 +41,46 @@ def edge_det_test(nms, imgs):
             try:
                 im_idx = int(input("\nPlease input integer index of image" +
                                     f"(not greater than {len(nms) -1}): "))
-                k_size = int(input("\nPlease input Gaus kernel size (odd integer): "))
-                sigma = float(input("\nPlease input sigma (float): "))
-                nrm_str = float(input("\nPlease input normalization strength" +
-                                        "(int > 0): ")) 
-                nrm_tmp_sz = int(input("\nPlease input normalization template" + 
-                                    " size (odd integer) (recommended --> 7)): "))
-                nrm_ar_sz = int(input("\nPlease input normalization area" + 
-                                    " size (odd integer (recommended --> 21)): "))
-                print("\nNOTE: upper and lower Canny edge detection thresholds" + 
-                        "\nshould have a ratio between 2:1 and 3:1")
-                thresh_l = int(input("\nPlease input lower Canny threshold" +
-                                        "(int > 0): "))
-                thresh_h = int(input("\nPlease input upper Canny threshold" +
-                                        "(int > 0): "))    
-                fig, ((ori, blur_8), (blur_8_den,img_edges))\
+                bl_size = int(input("\nPlease input bilateral filter size" + 
+                                     " (integer <10): "))
+                bl_s_cl = float(input("\nPlease input bilateral filter sigma" + 
+                                     " color value (float): "))
+                bl_s_sp = int(input("\nPlease input bilateral filter sigma" + 
+                                     " space size (integer): "))
+                clp_lim = float(input("\nPlease input CLAHE clip limit (float): "))
+                oc_k_sz = int(input("\nPlease input open/close kernel" + 
+                                     " size (integer): "))
+                fig, ((ori_plt, bl_8_plt), (clh_plt,msk_plt))\
                       = plt.subplots(2, 2)
-                ori.imshow(imgs[im_idx,:,:])
-                ori.set_title(nms[im_idx])
-                ori.axis("off")
+                ori_plt.imshow(imgs[im_idx,:,:])
+                ori_plt.set_title(nms[im_idx])
+                ori_plt.axis("off")
                 blur = cv.GaussianBlur(imgs[im_idx,:,:],\
-                                       (k_size,k_size),sigma)
-                blur_8_temp = cv.normalize(blur, None, 0, 255,\
+                                       (21,21),5)
+                blur_32 = blur.astype(np.float32) / 65535 #optimizes bilateral filter
+                bl = cv.bilateralFilter(blur_32,d=bl_size,sigmaColor = bl_s_cl\
+                                        ,sigmaSpace = bl_s_sp)
+                bl_8= cv.normalize(bl, None, 0, 255,\
                                        cv.NORM_MINMAX).astype('uint8')
                 #normalize linearly maps pixels from 0 --> 255 to preserve
-                #gradients for canny. .astype('uint8') allows cv to 
+                #gradients. .astype('uint8') allows cv to 
                 #actually read the image by converting back to integers
-                blur_8.imshow(blur_8_temp)
-                blur_8.set_title("8-bit Blur")
-                blur_8.axis("off")
-                blur_8_den_temp = cv.fastNlMeansDenoising\
-                    (blur_8_temp,None,h = nrm_str,\
-                     templateWindowSize = nrm_tmp_sz,\
-                        searchWindowSize =nrm_ar_sz)
-                blur_8_den_temp = cv.GaussianBlur(blur_8_den_temp,\
-                                       (k_size,k_size),sigma)
-                blur_8_den.imshow(blur_8_den_temp)
-                blur_8_den.set_title("8-bit Blur Denoised")
-                blur_8_den.axis("off")
-                img_edges.imshow(cv.Canny(blur_8_den_temp, thresh_l, thresh_h))
-                img_edges.set_title("Canny Edges")
-                img_edges.axis("off")
+                bl_8_plt.imshow(bl_8)
+                bl_8_plt.set_title("8-bit BL Filter after G Blur")
+                bl_8_plt.axis("off")
+                clh = cv.createCLAHE(clipLimit = clp_lim, tileGridSize = (8,8))
+                clahe = clh.apply(bl_8)
+                clh_plt.imshow(clahe)
+                clh_plt.set_title("8-bit CLAHE")
+                clh_plt.axis("off")
+                _, mask = cv.threshold(clahe, 0, 255,\
+                                       cv.THRESH_BINARY + cv.THRESH_OTSU)
+                k = np.ones((oc_k_sz,oc_k_sz), np.uint8)
+                mask = cv.morphologyEx(mask, cv.MORPH_OPEN, k)
+                mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, k, iterations=2)
+                msk_plt.imshow(mask)
+                msk_plt.set_title("Otsu Mask")
+                msk_plt.axis("off")
                 print("\nNOTE: You will have to close all image" + 
                       " windown before continuing")
                 plt.show()
