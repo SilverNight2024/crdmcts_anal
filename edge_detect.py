@@ -41,43 +41,40 @@ def mask_test(nms, imgs):
             try:
                 im_idx = int(input("\nPlease input integer index of image " +
                                     f"(not greater than {len(nms) -1}): "))
-                g_sig_1 = int(input("\nPlease input first gaussian bg" + 
-                                     " estimation sigma (integer): "))
-                g_sig_2 = int(input("\nPlease input second gaussian bg" + 
+                g_sig = int(input("\nPlease input gaussian bg" + 
                                      " estimation sigma (integer): "))
                 clp_lim = float(input("\nPlease input CLAHE clip limit (float): "))
-                fig, ((ori_plt, clh_1_plt), (clh_2_plt,msk_plt))\
-                      = plt.subplots(2, 2)
+                gamma = float(input("\nPlease input gamma correction (float): "))
+                loops = int(input("\nInput number of cleaning loops (int): "))
+                fig, ((ori_plt, new_img_plt, msk_plt))\
+                      = plt.subplots(1, 3)
                 ori_plt.imshow(imgs[im_idx,:,:])
                 ori_plt.set_title(nms[im_idx])
                 ori_plt.axis("off")
-                blur = cv.GaussianBlur(imgs[im_idx,:,:],\
-                                       (0,0),g_sig_1)
-                img_n_bg = cv.subtract(imgs[im_idx,:,:],blur)
-                img_no_bg_8= cv.normalize(img_n_bg, None, 0, 255,\
+                ori_g = (imgs[im_idx,:,:] / np.max(imgs[im_idx,:,:]))\
+                      ** gamma
+                ori_g_8 = cv.normalize(ori_g, None, 0, 255,\
                                        cv.NORM_MINMAX).astype('uint8')
-                #normalize linearly maps pixels from 0 --> 255 to preserve
-                #gradients. .astype('uint8') allows cv to 
-                #actually read the image by converting back to integers
                 clh = cv.createCLAHE(clipLimit = clp_lim, tileGridSize = (8,8))
-                clahe = clh.apply(img_no_bg_8)
-                clh_1_plt.imshow(clahe)
-                clh_1_plt.set_title("8-bit CLAHE")
-                clh_1_plt.axis("off")
-                blur_2 = cv.GaussianBlur(clahe,\
-                                       (0,0),g_sig_2)
-                img_n_bg_2 = cv.subtract(clahe,blur_2)
-                img_no_bg_8_2= cv.normalize(img_n_bg_2, None, 0, 255,\
-                                       cv.NORM_MINMAX).astype('uint8')
-                clahe_2 = clh.apply(img_no_bg_8_2)
-                clh_2_plt.imshow(clahe_2)
-                clh_2_plt.set_title("8-bit CLAHE")
-                clh_2_plt.axis("off")
-                _, mask = cv.threshold(clahe, 0, 255,\
+                img = ori_g_8
+                for _ in range(loops):
+                    blur = cv.GaussianBlur(img,\
+                                        (0,0),g_sig)
+                    img = cv.subtract(img,blur)
+                    img= cv.normalize(img, None, 0, 255,\
+                                        cv.NORM_MINMAX).astype('uint8')
+                    img = clh.apply(img)
+                    img = cv.equalizeHist(img)
+                img = cv.GaussianBlur(img, (0,0),4)
+                img = cv.fastNlMeansDenoising(img,None,5,7,21)
+                new_img_plt.imshow(img)
+                new_img_plt.set_title("Img Cleaned")
+                new_img_plt.axis("off")
+                _, mask = cv.threshold(img, 0, 255,\
                                        cv.THRESH_BINARY + cv.THRESH_OTSU)
                 k = np.ones((5,5), np.uint8)
-                mask = cv.morphologyEx(mask, cv.MORPH_OPEN, k)
-                mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, k, iterations=2)
+                # mask = cv.morphologyEx(mask, cv.MORPH_OPEN, k)
+                # mask = cv.morphologyEx(mask, cv.MORPH_CLOSE, k, iterations=2)
                 msk_plt.imshow(mask)
                 msk_plt.set_title("Otsu Mask")
                 msk_plt.axis("off")
