@@ -56,13 +56,14 @@ def show_imgs(nm_dict, img_dict, delim_str):
     prompting the user and then further allow the user to only open images
     with a certain average brightness compared to other images in the same
     sup_str + delim_str + sub_str key. The user can also optionally get 
-    information on all the image brightnesses in the selection and open 
-    based on indexes and not the threshold.
+    information on all the image brightnesses and percentile gaps
+    in the selection and open based on indexes or the threshold and can also
+    optionally not open images at all.
     """
     sup_kys, sub_kys = get_key_parts(nm_dict, delim_str)
     table_1 = PrettyTable()
     table_1.field_names = ["Prompt Input", "First Prompt","Second Prompt"]
-    for i in range(max(len(sup_kys), len(sub_kys))):
+    for i in range(max(len(sup_kys), len(sub_kys))): #defines table
         if ((i < len(sup_kys)) & (i < len(sub_kys))):
             tbl_row = [i, sup_kys[i], sub_kys[i]]
         elif ((i < len(sup_kys)) & (i >= len(sub_kys))):
@@ -88,87 +89,138 @@ def show_imgs(nm_dict, img_dict, delim_str):
                        ,np.percentile(img_mns,75),np.max(img_mns)])
         print(table)
         bad = True
-        while bad: #more information loop
+        while bad: #get more information loop
             mr_inf = input("\nWould you like more information? (Y/N): ")
             if mr_inf.capitalize() == "Y": #Give Comprehensive table
                 print("\nHere is a table with the index associated with,\n" +
                       "name of, and brightness of all slected images.")
+                gap_arr = np.zeros((len(nm_dict[req_key]),5))
+                gap_nms = ["99-50 gap",
+                           "99-95 gap", 
+                           "99-96 gap", 
+                           "99-97 gap", 
+                           "99-98 gap"]
+                for id in range(len(nm_dict[req_key])): #generate gap array
+                    img = img_dict[req_key][i,:,:].copy()
+                    med = np.percentile(img, 50)
+                    p99 = np.percentile(img, 99)
+                    p95 = np.percentile(img, 95)
+                    p96 = np.percentile(img, 96)
+                    p97 = np.percentile(img, 97)
+                    p98 = np.percentile(img, 98)
+                    p99_p50_gap = p99 - med
+                    p99_p95_gap = p99 - p95
+                    p99_p96_gap = p99 - p96
+                    p99_p97_gap = p99 - p97
+                    p99_p98_gap = p99 - p98
+                    gap_arr[id,:] = [
+                                    int(p99_p50_gap),
+                                    int(p99_p95_gap),
+                                    int(p99_p96_gap),
+                                    int(p99_p97_gap),
+                                    int(p99_p98_gap)]
                 table = PrettyTable()
                 table.add_column("Index",np.arange(0,len(img_mns)))
                 table.add_column("Image Name",nm_dict[req_key])
                 table.add_column("Mean Brightness",img_mns)
+                for idx in range(5): #set gap sections of colums
+                    table.add_column(gap_nms[idx],gap_arr[:,idx])
                 print(table)
-                bad_in = True
-                while bad_in: #with comprehensive table ask if img open is based on indices
-                    idx_t = input("\nOpen images across range between two idxs? (Y/N): ")
-                    if idx_t.capitalize() == "Y": #Open images bases on indices
-                        idx_t = True
-                        bad_in = False
-                    elif idx_t.capitalize() == "N":
+                bad_op = True
+                while bad_op: #prompt to open more images
+                    img_opn = input("\nWould You like to Open Images? (Y/N): ")
+                    if img_opn.capitalize() == "Y": #Open more images if yes
+                        show_imgs = True
+                        bad_in = True
+                        while bad_in: #open images based on indices or on brightness threshold
+                            idx_t = input("\nOpen images across range between two idxs (I)\n" + 
+                                        "or open all images above a brightness threshold (T)? (I/T): ")
+                            if idx_t.capitalize() == "I": #Open images bases on indices
+                                idx_t = True
+                                bad_in = False
+                            elif idx_t.capitalize() == "T":
+                                idx_t = False
+                                bad_in = False
+                            else:
+                                print("\nInvalid input, please try again.")
+                        bad_op = False
+                    elif img_opn.capitalize() == "N": #open no images if no
+                        show_imgs = False
+                        bad_op = False
+                    else: #retry
+                        print("\nInvalid input, please try again.")
+                bad = False
+            elif mr_inf.capitalize() == "N": #give no comprehensive table
+                bad_op = True
+                while bad_op: #only open more images in threshold style if wanted
+                    img_opn = input("\nWould You like to Open Images? (Y/N): ") 
+                    if img_opn.capitalize() == "Y": #Open more images if yes
+                        show_imgs = True
                         idx_t = False
-                        bad_in = False
+                        bad_op = False
+                    elif img_opn.capitalize() == "N":
+                        show_imgs = False
+                        bad_op = False
                     else:
                         print("\nInvalid input, please try again.")
                 bad = False
-            elif mr_inf.capitalize() == "N":
-                idx_t = False
-                bad = False
-            else:
+            else: #try again / bad input
                 print("\nInvalid input, please try again.")
         bad = True
-        if idx_t: #opens based on indexes
-            max_idx = len(nm_dict[req_key])
-            bad = True
-            while bad: #makes sure indexes are correct
-                print("\nYou will be asked to input first and second indexes\n" +
-                    "These will be the starting and ending integer indexes\n" +
-                    "of images in the selsection you would like to open.\n" +
-                    "The first index can thus equal but NOT exceed the second.\n" +
-                    f"They also cannot be less than 0 or greater than {max_idx-1}.")
-                idx_s, idx_e = req_two_idx(max_idx,max_idx)   
-                if idx_s <= idx_e:
-                    proc_q = input(f"\nThis will generate {idx_e-idx_s+1} imgs. Proceed? (Y/N): ")
-                    if proc_q .capitalize() == "Y": #Open images is yes
-                        print("\nNOTE: You will have to close all image windown before continuing")
-                        bad = False
+        if show_imgs: #if the user wants to see inages
+            if idx_t: #opens based on indexes
+                max_idx = len(nm_dict[req_key])
+                bad = True
+                while bad: #makes sure indexes are correct
+                    print("\nYou will be asked to input first and second indexes\n" +
+                        "These will be the starting and ending integer indexes\n" +
+                        "of images in the selsection you would like to open.\n" +
+                        "The first index can thus equal but NOT exceed the second.\n" +
+                        f"They also cannot be less than 0 or greater than {max_idx-1}.")
+                    idx_s, idx_e = req_two_idx(max_idx,max_idx)   
+                    if idx_s <= idx_e:
+                        proc_q = input(f"\nThis will generate {idx_e-idx_s+1} imgs. Proceed? (Y/N): ")
+                        if proc_q .capitalize() == "Y": #Open images is yes
+                            print("\nNOTE: You will have to close all image windown before continuing")
+                            bad = False
+                        else:
+                            print("\nWill not proceed, returning to indexes prompt.")
+                for i,img in enumerate(img_dict[req_key][np.arange(idx_s,idx_e+1)]):
+                    fig = plt.figure()
+                    fig.canvas.manager.set_window_title(nm_dict[req_key][i+idx_s])  # real window title
+                    plt.imshow(img) 
+                    plt.axis("off")
+                    plt.title(nm_dict[req_key][i+idx_s])
+                plt.show()
+            else: #opens based on brightness threshold
+                while bad: #make sure input is valid
+                    img_thr = input("\nPlease input brightness threshold. Images with mean\n" +
+                                    "brightness above it will open (float or int only): ")
+                    try:
+                        img_thr = float(img_thr)
+                    except ValueError:
+                        print("\nInput is not a float!")
+                        continue
+                    if ((type(img_thr) is float) & (img_thr <= np.max(img_mns))):
+                        thresh_vec = img_mns >= img_thr #get logical mask
+                        proc_q = input(f"\nThis will generate {np.sum(thresh_vec)} imgs. Proceed? (Y/N): ")
+                        if proc_q .capitalize() == "Y": #Open images is yes
+                            print("\nNOTE: You will have to close all image windown before continuing")
+                            bad = False
+                        else:
+                            print("\nWill not proceed, returning to threshold prompt.")
                     else:
-                        print("\nWill not proceed, returning to indexes prompt.")
-            for i,img in enumerate(img_dict[req_key][np.arange(idx_s,idx_e+1)]):
-                fig = plt.figure()
-                fig.canvas.manager.set_window_title(nm_dict[req_key][i+idx_s])  # real window title
-                plt.imshow(img) 
-                plt.axis("off")
-                plt.title(nm_dict[req_key][i+idx_s])
-            plt.show()
-        else: #opens based on brightness threshold
-            while bad: #make sure input is valid
-                img_thr = input("\nPlease input brightness threshold. Images with mean\n" +
-                                "brightness above it will open (float or int only): ")
-                try:
-                    img_thr = float(img_thr)
-                except ValueError:
-                    print("\nInput is not a float!")
-                    continue
-                if ((type(img_thr) is float) & (img_thr <= np.max(img_mns))):
-                    thresh_vec = img_mns >= img_thr #get logical mask
-                    proc_q = input(f"\nThis will generate {np.sum(thresh_vec)} imgs. Proceed? (Y/N): ")
-                    if proc_q .capitalize() == "Y": #Open images is yes
-                        print("\nNOTE: You will have to close all image windown before continuing")
-                        bad = False
-                    else:
-                        print("\nWill not proceed, returning to threshold prompt.")
-                else:
-                    print("\nThreshold will not open an image, please try again")
-            thresh_idxs = np.flatnonzero(thresh_vec)
-            for i,img in enumerate(img_dict[req_key][thresh_vec]):
-                fig = plt.figure()
-                fig.canvas.manager.set_window_title(nm_dict[req_key][thresh_idxs[i]])  # real window title
-                plt.imshow(img) 
-                plt.axis("off")
-                plt.title(nm_dict[req_key][thresh_idxs[i]])
-            plt.show()
+                        print("\nThreshold will not open an image, please try again")
+                thresh_idxs = np.flatnonzero(thresh_vec)
+                for i,img in enumerate(img_dict[req_key][thresh_vec]):
+                    fig = plt.figure()
+                    fig.canvas.manager.set_window_title(nm_dict[req_key][thresh_idxs[i]])  # real window title
+                    plt.imshow(img) 
+                    plt.axis("off")
+                    plt.title(nm_dict[req_key][thresh_idxs[i]])
+                plt.show()
         bad = True
-        while bad:
+        while bad: #ask if the user wants to open more images
             go_on = input("\nContinue to open new images? (Y/N): ")
             if go_on.capitalize() == "Y": #Open more images if yes
                 more_imgs = True
