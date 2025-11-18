@@ -102,7 +102,7 @@ def show_imgs(nm_dict, img_dict, delim_str):
                            "99-97 gap", 
                            "99-98 gap"]
                 for id in range(len(nm_dict[req_key])): #generate gap array
-                    img = img_dict[req_key][i,:,:].copy()
+                    img = img_dict[req_key][id,:,:].copy()
                     med = np.percentile(img, 50)
                     p99 = np.percentile(img, 99)
                     p95 = np.percentile(img, 95)
