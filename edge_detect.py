@@ -96,10 +96,8 @@ def mask_test(nms, imgs):
             else:
                 print("\nInvalid input, please try again.")
 
-def pkl_msks(dct):
-    #c_dir = os.getcwd()
-    pkl_msk_fnm = "cmc_msk_dct.pkl" #define pickle filename
-    with open(pkl_msk_fnm, "wb") as f: #pickle dicts
+def pkl_dct(dct,fnm):
+    with open(fnm, "wb") as f: #pickle dicts
         pickle.dump(dct, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 def mask(img_in):
@@ -126,46 +124,84 @@ def mask(img_in):
         _, mask = cv.threshold(img, 0, 255,\
                                 cv.THRESH_BINARY + cv.THRESH_OTSU)
     else:
-        mask = np.zeros(img.shape)
+        mask = np.zeros(img.shape, dtype = np.uint8)
     return mask
 
-def img_dct_2_msks(in_dct):
-    msk_dct = {}
-    in_dct_kys = list(in_dct.keys())
-    for _, k in enumerate(in_dct_kys):
-        tmp_arr = np.zeros(in_dct[k].shape)
-        for i in range(in_dct[k].shape[0]):
-            tmp_arr[i,:,:] =\
-            mask(in_dct[k][i,:,:])
-        msk_dct[k] = tmp_arr
-    print("All Masks Created")
-    return msk_dct
+def img_dct_2_msks(in_dct,nm_dct,sup_strs,sub_strs,delim):
+    c_dir = os.getcwd()
+    fld_dir = "msk_dcts"
+    c_fld_dir = os.path.join(c_dir,fld_dir)
+    if os.path.exists(c_fld_dir) & os.path.isdir(c_fld_dir):
+        if len(os.listdir(c_fld_dir)) > 0: 
+            #check if fls, prompt delete if so
+            bad = True
+            while bad: #ask if the user wants to delete mask dcts
+                del_msks = input("\nWould you like to delete mask dicts? (Y/N): ")
+                if del_msks.capitalize() == "Y": #Delete masks
+                    print("\n")
+                    for file in os.listdir(c_fld_dir): #delete msk dcts
+                        t_dir = os.path.join(c_fld_dir,file)
+                        os.remove(t_dir)
+                        print(f"{file} deleted")
+                    mk_msks = True
+                    bad = False
+                elif del_msks.capitalize() == "N": #Don't delete masks
+                    mk_msks = False
+                    bad = False
+                else:
+                    print("\nInvalid input, please try again.")
+        else: #generate mask dcts
+            mk_msks = True
+            print(f"\nNo dicts found in {fld_dir} folder")
+    else: #no folder detected
+        print(f"\n No folder by name {fld_dir} found, check\n" + 
+              "img_dct_2_msk directory vars and actual directory")
 
-rep_img_sel_vec = \
-np.array([
-    [3,3,8],
-    [3,4,0],
-    [3,5,5],
-    [3,1,2],
-    [0, 1, 17],
-    [0, 4, 16],
-    [0, 4, 9],
-    [3, 7, 10],
-    [3, 7, 11],
-    [8, 2, 18],
-    [8, 2, 19]
-])
+    if mk_msks:
+        print("\n Starting Mask Creation")
+        for sup_k in sup_strs: #gen sup_k dicts
+            msk_dct = {}
+            for sub_k in sub_strs:
+                k = sup_k + delim + sub_k
+                tmp_arr = np.zeros(in_dct[k].shape, dtype=np.uint8)
+                print("\n")
+                for i in range(in_dct[k].shape[0]): #gen dict
+                    tmp_arr[i,:,:] =\
+                    mask(in_dct[k][i,:,:])
+                    print(f"{nm_dct[k][i]} Mask Created")
+                msk_dct[k] = tmp_arr
+            dct_nm = sup_k.replace(".lif",".pkl")
+            t_dir = os.path.join(c_fld_dir,dct_nm)
+            pkl_dct(msk_dct,t_dir)
+            print(f"{dct_nm} Mask Dict Pickled")
 
 img_Nms, imgs = use_open_lif()
-# delim_str = "#"
+delim_str = "#"
+lif_fls, trns_nms =\
+      get_key_parts(img_Nms, delim_str)
+img_dct_2_msks(imgs, img_Nms, 
+               lif_fls, trns_nms, 
+               delim_str)
+
+# rep_img_sel_vec = \
+# np.array([
+#     [3,3,8],
+#     [3,4,0],
+#     [3,5,5],
+#     [3,1,2],
+#     [0, 1, 17],
+#     [0, 4, 16],
+#     [0, 4, 9],
+#     [3, 7, 10],
+#     [3, 7, 11],
+#     [8, 2, 18],
+#     [8, 2, 19]
+# ])
+
 #prompt_show_imgs(img_Nms, imgs, delim_str)
-# lif_fls, trns_nms =\
-#       get_key_parts(img_Nms, delim_str)
 #sel_nm, sel_img = img_select(
     # lif_fls, trns_nms, 
     # delim_str, img_Nms, 
     # imgs, rep_img_sel_vec)
 #mask_test(sel_nm, sel_img)
-msks = img_dct_2_msks(imgs)
-pkl_msks(msks)
 
