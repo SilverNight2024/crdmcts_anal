@@ -73,21 +73,22 @@ def show_imgs(nm_dict, img_dict, delim_str):
         table_1.add_row(tbl_row)
     more_imgs = True #set while loop
     while more_imgs: #allow for the opening of multiple sets of images
-        print("\nHere is a table with indexes associated with image files and transcript\n" +
-              "categories of the images openable through this function.")
-        print(table_1)
-        print("\nPlease put input corresponding to\n" +
-           "the prompt number and desired img key")
-        sup_kys_idx, sub_kys_idx = req_two_idx(len(sup_kys),len(sub_kys))
-        req_key = sup_kys[sup_kys_idx] + delim_str + sub_kys[sub_kys_idx]
-        img_mns = img_dict[req_key].mean(axis=(1,2)) #gets mean for brightness
-        print("\nHere is a table with a summary of information pertaining\n" +
-               "to the brightness of the images in your selection.")
-        table = PrettyTable()
-        table.field_names = ["Minimum","Quarter 1","Median","Quarter 3","Maximum"]
-        table.add_row([np.min(img_mns),np.percentile(img_mns,25),np.percentile(img_mns,50)\
-                       ,np.percentile(img_mns,75),np.max(img_mns)])
-        print(table)
+        for _ in range(1): #single make main sub and sup string table loop
+            print("\nHere is a table with indexes associated with image files and transcript\n" +
+                "categories of the images openable through this function.")
+            print(table_1)
+            print("\nPlease put input corresponding to\n" +
+            "the prompt number and desired img key")
+            sup_kys_idx, sub_kys_idx = req_two_idx(len(sup_kys),len(sub_kys))
+            req_key = sup_kys[sup_kys_idx] + delim_str + sub_kys[sub_kys_idx]
+            img_mns = img_dict[req_key].mean(axis=(1,2)) #gets mean for brightness
+            print("\nHere is a table with a summary of information pertaining\n" +
+                "to the brightness of the images in your selection.")
+            table = PrettyTable()
+            table.field_names = ["Minimum","Quarter 1","Median","Quarter 3","Maximum"]
+            table.add_row([np.min(img_mns),np.percentile(img_mns,25),np.percentile(img_mns,50)\
+                        ,np.percentile(img_mns,75),np.max(img_mns)])
+            print(table)
         bad = True
         while bad: #get more information loop
             mr_inf = input("\nWould you like more information? (Y/N): ")
