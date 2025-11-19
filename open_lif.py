@@ -100,7 +100,7 @@ def stand_Lif_Imgs(raw_nms_dct, raw_imgs_dct, delim_str, template_Lif):
             no_del_idxs = np.flatnonzero(tmp_idxs) #get non-zero elements
             img_nm_dict[lif_File_Nms[i]+"#"+trns_Nms[j]] = [raw_nms_dct[lif_File_Nms[i]][l] for l in no_del_idxs]
             img_dict[lif_File_Nms[i]+"#"+trns_Nms[j]] = raw_imgs_dct[lif_File_Nms[i]][no_del_idxs,:,:]
-    print("Image Dicts Standardized")
+    print("\nImage Dicts Standardized")
     return img_nm_dict, img_dict
 
 #Streamline Use
@@ -118,7 +118,7 @@ def load_save_dicts(pkl_fnm):
     with open(pkl_fnm, "wb") as f: #pickle dicts
         pickle.dump(img_Nms, f, protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(imgs, f, protocol=pickle.HIGHEST_PROTOCOL)
-    print("Image names dict and images dict have been generated and saved")
+    print("\nImage names dict and images dict have been generated and saved")
     return img_Nms, imgs
 
 def use_open_lif():
@@ -133,7 +133,7 @@ def use_open_lif():
     if os.path.exists(c_dir + "\\" + pkl_fnm):
         incr_inp = True
         while incr_inp:
-            del_a = input("Would you like to delete pickled dicts? (Y/N): ")
+            del_a = input("\nWould you like to delete pickled dicts? (Y/N): ")
             if del_a.capitalize() == "Y": #Regenerate and save if deleted, load in if not.
                 os.remove(c_dir + "\\" + pkl_fnm) #delete pickled files
                 img_Nms, imgs = load_save_dicts(pkl_fnm)
@@ -142,10 +142,10 @@ def use_open_lif():
                 with open(pkl_fnm, "rb") as f: #unpickle dicts
                     img_Nms = pickle.load(f)
                     imgs = pickle.load(f)
-                print("Image names dict and images dict are loaded in")
+                print("\nImage names dict and images dict are loaded in")
                 incr_inp = False
             else:
-                print("Invalid input, please try again.")
+                print("\nInvalid input, please try again.")
     else: #if the dicts dont exist generate and save them
         img_Nms, imgs = load_save_dicts(pkl_fnm)
     return img_Nms, imgs
