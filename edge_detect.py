@@ -326,15 +326,14 @@ def msk_dta_sum_tbls(nm_dict, img_dict, delim_str):
             table.add_column("Mask Mean",msk_mns)
             print(table)
             
-img_Nms, imgs = use_open_lif()
-delim_str = "#"
-# lif_fls, trns_nms =\
-#       get_key_parts(img_Nms, delim_str)
-#img_dct_2_msks(imgs, img_Nms, 
-            #    lif_fls, trns_nms, 
-            #    delim_str)
-comp_msk(img_Nms, imgs, delim_str)
-
+# img_Nms, imgs = use_open_lif()
+# delim_str = "#"
+# # lif_fls, trns_nms =\
+# #       get_key_parts(img_Nms, delim_str)
+# #img_dct_2_msks(imgs, img_Nms, 
+#             #    lif_fls, trns_nms, 
+#             #    delim_str)
+# comp_msk(img_Nms, imgs, delim_str)
 
 # rep_img_sel_vec = \
 # np.array([
