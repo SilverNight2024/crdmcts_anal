@@ -44,38 +44,54 @@ def mask_test(nms, imgs):
             try:
                 im_idx = int(input("\nPlease input integer index of image " +
                                     f"(not greater than {len(nms) -1}): "))
-                loops = int(input("\nPlease input number of loops (int): "))
-                fig, ((ori_plt, new_img_plt, msk_plt))\
-                      = plt.subplots(1, 3)
-                ori_plt.imshow(imgs[im_idx,:,:])
+                img = imgs[im_idx,:,:].copy()
+                msk = mask(img)
+                fig, ((ori_plt, msk_plt))\
+                    = plt.subplots(1, 2)
+                ori_plt.imshow(img)
                 ori_plt.set_title(nms[im_idx])
                 ori_plt.axis("off")
-                ori_g = (imgs[im_idx,:,:] / np.max(imgs[im_idx,:,:]))\
-                      ** 0.5
-                ori_g_8 = cv.normalize(ori_g, None, 0, 255,\
-                                       cv.NORM_MINMAX).astype('uint8')
-                clh = cv.createCLAHE(clipLimit = 1.0, tileGridSize = (8,8))
-                img = ori_g_8
-                for _ in range(loops):
-                    blur = cv.GaussianBlur(img,\
-                                        (0,0),80)
-                    img = cv.subtract(img,blur)
-                    img= cv.normalize(img, None, 0, 255,\
-                                        cv.NORM_MINMAX).astype('uint8')
-                    img = clh.apply(img)
-                    img = cv.equalizeHist(img)
-                img = cv.GaussianBlur(img, (0,0),4)
-                img = cv.fastNlMeansDenoising(img,None,5,7,21)
-                new_img_plt.imshow(img)
-                new_img_plt.set_title("Img Cleaned")
-                new_img_plt.axis("off")
-                _, mask = cv.threshold(img, 0, 255,\
-                                       cv.THRESH_BINARY + cv.THRESH_OTSU)
-                msk_plt.imshow(mask)
+                msk_plt.imshow(msk)
                 msk_plt.set_title("Otsu Mask")
                 msk_plt.axis("off")
-                print("\nNOTE: You will have to close all image" + 
-                      " windown before continuing")
+        #         # gamma = float(input("\nPlease input float gamma: "))
+        #         # loops = int(input("\nPlease input number of loops (int): "))
+        #         # sigma = int(input("\nPlease input int g-blur sigma: "))
+        #         # cl = float(input("\n Please input float clip limit: "))
+        #         img = imgs[im_idx,:,:].copy()
+        #         fig, ((ori_plt, new_img_plt, msk_plt))\
+        #             = plt.subplots(1, 3)
+        #         ori_plt.imshow(img)
+        #         ori_plt.set_title(nms[im_idx])
+        #         ori_plt.axis("off")
+        #         img = (img / np.max(img))** 0.5
+        #         img = cv.normalize(img, None, 0, 255,\
+        #                         cv.NORM_MINMAX).astype('uint8')
+        #         clh = cv.createCLAHE(clipLimit = 1.0, tileGridSize = (8,8))
+        #         for _ in range(5):
+        #             blur = cv.GaussianBlur(img,\
+        #                                 (0,0),80)
+        #             img = cv.subtract(img,blur)
+        #             img= cv.normalize(img, None, 0, 255,\
+        #                                 cv.NORM_MINMAX).astype('uint8')
+        #             img = clh.apply(img)
+        #             img = cv.equalizeHist(img)
+        #         img = cv.GaussianBlur(img, (0,0),4)
+        #         img = cv.fastNlMeansDenoising(img,None,5,7,21)
+        #         new_img_plt.imshow(img)
+        #         new_img_plt.set_title("Img Cleaned")
+        #         new_img_plt.axis("off")
+        #         _, mask = cv.threshold(img, 0, 255,\
+        #                             cv.THRESH_BINARY + cv.THRESH_OTSU)
+        #         frc_m = np.sum(mask) / (255 * mask.shape[0] * mask.shape[1])
+        #         if frc_m > 0.9:
+        #             _, mask = cv.threshold(img, 220, 255,\
+        #                                 cv.THRESH_BINARY) 
+        #         msk_plt.imshow(mask)
+        #         msk_plt.set_title("Otsu Mask")
+        #         msk_plt.axis("off")
+        #         print("\nNOTE: You will have to close all image" + 
+        #             " windown before continuing")
                 plt.show()
             except ValueError as e:
                 print(f"\nValue Error: {e}")
@@ -95,6 +111,46 @@ def mask_test(nms, imgs):
                 bad = False
             else:
                 print("\nInvalid input, please try again.")
+
+def show_msks(nms, imgs):
+    fig, axes = plt.subplots(nrows = 9, 
+                            ncols = 5, 
+                            figsize = (15,18))
+    for i in range(len(nms)):
+        r, c = divmod(i, 5)
+        img = imgs[i,:,:].copy()
+        # axes[1,1].imshow(img)
+        # axes[1,1].set_title(nms[i])
+        # axes[1,1].axis("off")
+        # img = cv.normalize(img, None, 0, 255,\
+        #                     cv.NORM_MINMAX).astype('uint8')
+        img = (img / np.max(img))** 0.5
+        img = cv.normalize(img, None, 0, 255,\
+                        cv.NORM_MINMAX).astype('uint8')
+        clh = cv.createCLAHE(clipLimit = 1.0, tileGridSize = (8,8))
+        for _ in range(5):
+            blur = cv.GaussianBlur(img,\
+                                (0,0),80)
+            img = cv.subtract(img,blur)
+            img= cv.normalize(img, None, 0, 255,\
+                                cv.NORM_MINMAX).astype('uint8')
+            img = clh.apply(img)
+            img = cv.equalizeHist(img)
+        img = cv.GaussianBlur(img, (0,0),4)
+        img = cv.fastNlMeansDenoising(img,None,5,7,21)
+        # axes[1,2].imshow(img)
+        # axes[1,2].set_title("Enhanced Image")
+        # axes[1,2].axis("off")
+        _, mask = cv.threshold(img, 0, 255,\
+                            cv.THRESH_BINARY + cv.THRESH_OTSU)
+        # frc_m = np.sum(mask) / (255 * mask.shape[0] * mask.shape[1])
+        # if frc_m > 0.9:
+        #     _, mask = cv.threshold(img, 220, 255,\
+        #                         cv.THRESH_BINARY) 
+        axes[r,c].imshow(mask)
+        # axes[1,3].set_title("Mask")
+        axes[r,c].axis("off")
+    plt.show()
 
 def pkl_upkl_dct(dct,fnm,bool):
     """if Bool is true, write, if false, read"""
@@ -128,6 +184,10 @@ def mask(img_in):
         img = cv.fastNlMeansDenoising(img,None,5,7,21)
         _, mask = cv.threshold(img, 0, 255,\
                                 cv.THRESH_BINARY + cv.THRESH_OTSU)
+        frc_m = np.sum(mask) / (255 * mask.shape[0] * mask.shape[1])
+        if frc_m > 0.9:
+            _, mask = cv.threshold(img, 220, 255,\
+                                cv.THRESH_BINARY) 
     else:
         mask = np.zeros(img.shape, dtype = np.uint8)
     return mask
@@ -275,7 +335,7 @@ def comp_msk(nm_dict, img_dict, delim_str):
                     sm_msk_b = True
                     more_imgs = True
                     bad = False
-                elif sm_msk_b.capitalize() == "N":
+                elif sm_msk.capitalize() == "N":
                     del(msk_dct)
                     sm_msk_b = False
                     more_imgs = False
@@ -325,15 +385,41 @@ def msk_dta_sum_tbls(nm_dict, img_dict, delim_str):
             table.add_column("99-95 gap",gap_arr)
             table.add_column("Mask Mean",msk_mns)
             print(table)
-            
-# img_Nms, imgs = use_open_lif()
-# delim_str = "#"
-# # lif_fls, trns_nms =\
-# #       get_key_parts(img_Nms, delim_str)
-# #img_dct_2_msks(imgs, img_Nms, 
-#             #    lif_fls, trns_nms, 
-#             #    delim_str)
-# comp_msk(img_Nms, imgs, delim_str)
+
+def sub_neg(sup_keys, sub_keys, delim_str, img_dct):
+    for i in range(len(sup_keys)):
+        neg_ky = sup_keys[i] + delim_str + sub_keys[3]
+        neg_mn = np.mean(img_dct[neg_ky],axis=0)
+        for j in range(len(sub_keys)):
+            key = sup_keys[i] + delim_str + sub_keys[j]
+            for k in range(len(img_dct[key])):
+                img_dct[key][k] =\
+                np.clip(img_dct[key][k] -\
+                neg_mn,0,65535).astype(np.uint16)
+     
+# fuck_vec = np.array([[1, 0, 2], [1, 2, 21], 
+#                      [1, 4, 3], [1, 4, 9], 
+#                      [1, 4, 20], [1, 4, 21], 
+#                      [1, 4, 25], [2, 2, 28], 
+#                      [2, 5, 11], [3, 1, 25], 
+#                      [3, 2, 1], [3, 2, 20], 
+#                      [3, 4, 21], [3, 5, 10], 
+#                      [3, 6, 2], [4, 1, 10], 
+#                      [4, 5, 17], [5, 0, 11], 
+#                      [5, 0, 21], [5, 5, 15], 
+#                      [5, 5, 16], [5, 6, 21], 
+#                      [5, 6, 24], [6, 0, 18], 
+#                      [7, 0, 18], [7, 0, 26], 
+#                      [7, 1, 10], [7, 4, 19], 
+#                      [7, 4, 20], [7, 4, 21], 
+#                      [7, 4, 22], [7, 5, 6], 
+#                      [7, 5, 7], [7, 5, 13], 
+#                      [7, 5, 23], [7, 6, 4], 
+#                      [7, 6, 23], [7, 7, 17], 
+#                      [8, 0, 14], [8, 0, 17], 
+#                      [8, 0, 24], [8, 0, 26], 
+#                      [8, 1, 3], [8, 5, 0], 
+#                      [8, 6, 13]])
 
 # rep_img_sel_vec = \
 # np.array([
@@ -350,10 +436,19 @@ def msk_dta_sum_tbls(nm_dict, img_dict, delim_str):
 #     [8, 2, 19]
 # ])
 
-#prompt_show_imgs(img_Nms, imgs, delim_str)
-#sel_nm, sel_img = img_select(
-    # lif_fls, trns_nms, 
-    # delim_str, img_Nms, 
-    # imgs, rep_img_sel_vec)
-#mask_test(sel_nm, sel_img)
+# img_Nms, imgs = use_open_lif()
+# delim_str = "#"
+# lif_fls, trns_nms =\
+#       get_key_parts(img_Nms, delim_str)
+# sub_neg(lif_fls, trns_nms, delim_str, imgs)
+# nm_lst, img_arr = img_select(\
+#     lif_fls, trns_nms, delim_str, 
+#     img_Nms, imgs, fuck_vec)
+# # nm_lst, img_arr = img_select(\
+# #     lif_fls, trns_nms, delim_str, 
+# #     img_Nms, imgs, rep_img_sel_vec)
+# #mask_test(nm_lst, img_arr)
+# #msk_dta_sum_tbls(img_Nms, imgs, delim_str)
+# comp_msk(img_Nms, imgs, delim_str)
+
 
