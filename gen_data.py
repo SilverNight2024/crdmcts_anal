@@ -202,17 +202,3 @@ def arr2prtytbl(arr,clm_hds,rw_hds,rw_hds_nm):
         print(table)
     else:
         print("Invalid column headers length!")
-
-# img_Nms, imgs = use_open_lif()
-# delim_str = "#"
-# #frc_tbl(img_Nms, imgs, delim_str)
-# trns_nms, mns_arr, nrm_mns_arr, err_arr, nrm_err_arr\
-#       = get_dta_arrs(img_Nms, imgs, delim_str)
-# tm_pts = ["18 hrs","26 hrs",
-#          "50 hrs","80 hrs",
-#          "100 hrs","123 hrs",
-#          "148 hrs","176 hrs"]
-# arr2prtytbl(mns_arr,tm_pts,trns_nms,"")
-# arr2prtytbl(err_arr,tm_pts,trns_nms,"")
-# arr2prtytbl(nrm_mns_arr,tm_pts,trns_nms,"")
-# arr2prtytbl(nrm_err_arr,tm_pts,trns_nms,"")
