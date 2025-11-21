@@ -49,6 +49,9 @@ def gen_plt(mn_arr, er_arr, tm_pts, trns_nms, agg_idxs, neg_bool, log_bool, norm
       if neg_bool: #add or remove negative control
             for i in range(len(agg_idxs)-1):
                   agg_idxs[i].append(3)
+      xtra_nl = ""
+      if log_bool & ~norm_bool:
+            xtra_nl = "\n"
       else:
             agg_idxs[3] = np.delete(agg_idxs[3],3)
       fig, axs = plt.subplots(2, 2, layout="constrained")
@@ -92,7 +95,8 @@ def gen_plt(mn_arr, er_arr, tm_pts, trns_nms, agg_idxs, neg_bool, log_bool, norm
             axs[r, c].set_xlabel("Time After Transfection (Hrs)")
             axs[r, c].set_ylabel(log_str +  norm_str + 
                                     "Mean " +  norm_nl + 
-                                    "Integrated Pixel Density")
+                                    "Denoised " + xtra_nl + 
+                                    "Integrated Pixel Intensity")
             axs[r, c].set_title(title_lst[i])
       
       plt.show()
