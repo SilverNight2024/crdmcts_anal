@@ -114,7 +114,7 @@ def gen_tHalf_dta(mn_arr, er_arr, tm_pts, trns_nms, arr_s_idx, idxs):
                                     tm, arr[i,:], 
                                     p0=p0, 
                                     sigma = err[i,:],
-                                    absolute_sigma = True, 
+                                    absolute_sigma = False, 
                                     bounds = bounds)
         thlf_arr[idx,0] = np.log(2) / prs[1]
         prs_err = np.sqrt(np.diag(prcov))
