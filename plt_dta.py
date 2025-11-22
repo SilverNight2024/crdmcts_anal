@@ -3,25 +3,6 @@ import matplotlib.pyplot as plt #plotting
 from open_lif import use_open_lif
 from gen_data import get_dta_arrs, arr2prtytbl
 
-img_Nms, imgs = use_open_lif()
-delim_str = "#"
-#frc_tbl(img_Nms, imgs, delim_str)
-trns_nms, mns_arr, nrm_mns_arr, err_arr, nrm_err_arr\
-      = get_dta_arrs(img_Nms, imgs, delim_str)
-tm_pts_lbls = ["18 hrs","26 hrs", 
-          "50 hrs","80 hrs", 
-          "100 hrs","123 hrs", 
-          "148 hrs","176 hrs"]
-# arr2prtytbl(mns_arr,tm_pts_lbls,trns_nms,"")
-# arr2prtytbl(err_arr/(mns_arr + 1e-16),tm_pts_lbls,trns_nms,"")
-# arr2prtytbl(nrm_mns_arr,tm_pts_lbls,trns_nms,"")
-# arr2prtytbl(nrm_err_arr/(nrm_mns_arr + 1e-16),tm_pts_lbls,trns_nms,"")
-
-tm_pts = [18,26,50,80,100,123,148,176]
-
-all_idxs = np.arange(mns_arr.shape[1])
-trns_agg_idxs = [[0,4,7],[2,6,7],[1,5,7],all_idxs]
-
 def gen_plt(mn_arr, er_arr, tm_pts, trns_nms, agg_idxs, neg_bool, log_bool, norm_bool):
       agg_idxs = agg_idxs.copy()
       colors = [
@@ -101,8 +82,31 @@ def gen_plt(mn_arr, er_arr, tm_pts, trns_nms, agg_idxs, neg_bool, log_bool, norm
       
       plt.show()
 
-gen_plt(mns_arr, err_arr, tm_pts, trns_nms, trns_agg_idxs, True, False, False)
-gen_plt(nrm_mns_arr, nrm_err_arr, tm_pts, trns_nms, trns_agg_idxs, True, False, True)
-gen_plt(mns_arr, err_arr, tm_pts, trns_nms, trns_agg_idxs, False, True, False)
-gen_plt(nrm_mns_arr, nrm_err_arr, tm_pts, trns_nms, trns_agg_idxs, False, True, True)
+img_Nms, imgs = use_open_lif()
+delim_str = "#"
+trns_nms, mns_arr, nrm_mns_arr, err_arr, nrm_err_arr\
+      = get_dta_arrs(img_Nms, imgs, delim_str)
+tm_pts_lbls = ["18 hrs","26 hrs", 
+          "50 hrs","80 hrs", 
+          "100 hrs","123 hrs", 
+          "148 hrs","176 hrs"]
+# arr2prtytbl(mns_arr,tm_pts_lbls,trns_nms,"")
+# arr2prtytbl(err_arr/(mns_arr + 1e-16),tm_pts_lbls,trns_nms,"")
+# arr2prtytbl(nrm_mns_arr,tm_pts_lbls,trns_nms,"")
+# arr2prtytbl(nrm_err_arr/(nrm_mns_arr + 1e-16),tm_pts_lbls,trns_nms,"")
+tm_pts = [18,26,50,80,100,123,148,176]
+all_idxs = np.arange(mns_arr.shape[1])
+trns_agg_idxs = [[0,4,7],[2,6,7],[1,5,7],all_idxs]
+gen_plt(mns_arr, err_arr, tm_pts, 
+        trns_nms, trns_agg_idxs, 
+        True, False, False)
+gen_plt(nrm_mns_arr, nrm_err_arr, 
+        tm_pts, trns_nms, trns_agg_idxs, 
+        True, False, True)
+gen_plt(mns_arr, err_arr, tm_pts, 
+        trns_nms, trns_agg_idxs, 
+        False, True, False)
+gen_plt(nrm_mns_arr, nrm_err_arr, 
+        tm_pts, trns_nms, trns_agg_idxs, 
+        False, True, True)
 
